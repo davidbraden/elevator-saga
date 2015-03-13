@@ -1,63 +1,54 @@
 {
-    init: function(elevators, floors) {
-        var elevator0 = elevators[0];
-        var elevator1 = elevators[1];
-        var elevator2 = elevators[2];
-        var elevator3 = elevators[3];
-        
-        elevator0.goToFloor(0);
-        elevator1.goToFloor(2);
-        elevator2.goToFloor(5);
-        elevator3.goToFloor(1);
+	init: function(elevators, floors) {
+		for (var i=0; i< elevators.length; i++) {
+			console.log(elevator);
+			var elevator= elevators[i];
+			elevator.goToFloor(i);
+			setupElevator(elevator);
+		}
 
-        setupElevator(elevator0, 0);
-        setupElevator(elevator1, 1);
-        setupElevator(elevator2, 2);
-        setupElevator(elevator3, 3);
+		function setupElevator(elevator) {
+			var elevatorLevelsRequested = [];
 
-        function setupElevator(elevator, i) {
-
-            elevator.on("idle", function() {
-                elevator.goToFloor(0);
-                elevator.goToFloor(5);
-            });
+			elevator.on("idle", function() {
+				elevator.goToFloor(0);
+				elevator.goToFloor(floors.length);
+			});
 
 
-            elevator.on("floor_button_pressed", function(floorNum) {
-                floors[floorNum].requested = i;
-            });
+			elevator.on("floor_button_pressed", function(floorNum) {
+				if (elevatorLevelsRequested.indexOf(floorNum)=== -1) {
+					elevatorLevelsRequested.push(floorNum);
+				}
+			});
 
-            elevator.on("stopped_at_floor", function(floorNum) {
-                if (floors[floorNum].requested === i || floors[floorNum].requested === -1) {
-                    floors[floorNum].requested = null;
-                }
-            });
+			elevator.on("stopped_at_floor", function(floorNum) {
+				var i = elevatorLevelsRequested.indexOf(floorNum);
+				if (i > -1) {
+					elevatorLevelsRequested.splice(i, 1);
+				}
+				floors[floorNum].requested = false;
+			});
 
-            elevator.on("passing_floor", function(floorNum, direction) {
-                if(((floors[floorNum].requested === -1 && elevator.loadFactor() < 0.8)
-                    || floors[floorNum].requested === i)
-                   && (direction === "up" || floorNum >2)
-                  ) {
-                    elevator.goToFloor(floorNum, true);
-                }
-                if (floorNum > 2) {
+			elevator.on("passing_floor", function(floorNum, direction) {
+				if((floors[floorNum].requested && elevator.loadFactor() < 1)
+				||(elevatorLevelsRequested.indexOf(floorNum)> -1)) {
+					elevator.goToFloor(floorNum, true);
+				}
+			});
+		}
 
-                }
-            });
-        };
+		floors.forEach(function(floor) {
+			floor.on("up_button_pressed", function() {
+				floor.requested = true;
+			});
+			floor.on("down_button_pressed", function() {
+				floor.requested = true;
+			});
+		});
+	},
+	update: function(dt, elevators, floors) {
 
-floors.forEach(function(floor) {
-    floor
-    floor.on("up_button_pressed", function() {
-        floor.requested = -1;
-    });
-    floor.on("down_button_pressed", function() {
-        floor.requested = -1;
-    });
-});
-},
-update: function(dt, elevators, floors) {
-
-}
+	}
 }
 
